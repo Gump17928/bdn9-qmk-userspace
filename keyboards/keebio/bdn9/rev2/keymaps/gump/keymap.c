@@ -52,10 +52,12 @@ tap_dance_action_t tap_dance_actions[] = {
 #define LAYER_TD TD(TD_LAYER_CYCLE)
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
-    /* BASE — top-middle cycles layers by tap count */
+    /* BASE — top-middle cycles layers by tap count.
+       TEMP: middle-left is EE_CLR while we debug stuck-white RGB.  Press
+       once to wipe EEPROM; will be restored to KC_APP once RGB works. */
     [_BASE] = LAYOUT(
         KC_MUTE, LAYER_TD, KC_MPLY,
-        KC_APP,  KC_UP,    RM_TOGG,
+        EE_CLR,  KC_UP,    RM_TOGG,
         KC_LEFT, KC_DOWN,  KC_RGHT
     ),
 

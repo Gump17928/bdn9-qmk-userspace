@@ -1,6 +1,4 @@
-# RGB Matrix is declared as a feature in keyboard.json, but the data-driven
-# enable doesn't always propagate the RGB_MATRIX_ENABLE define reliably.
-# Enable it explicitly so the driver, effects, and RM_* keycodes all compile in.
+# RGB Matrix explicit enable (also declared in keyboard.json features).
 RGB_MATRIX_ENABLE = yes
 
 # Do NOT also enable RGBLIGHT — it fights with RGB Matrix over the same
