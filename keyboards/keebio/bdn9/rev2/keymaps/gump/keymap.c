@@ -91,7 +91,7 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
             break;
         case _MEDIA:
             if (index == _LEFT)  tap_code(clockwise ? KC_MNXT : KC_MPRV);
-            if (index == _RIGHT) tap_code(clockwise ? KC_WH_D : KC_WH_U);
+            if (index == _RIGHT) tap_code(clockwise ? MS_WHLD : MS_WHLU);
             break;
         case _RGB:
             if (index == _LEFT)  tap_code16(clockwise ? RM_VALU : RM_VALD);
