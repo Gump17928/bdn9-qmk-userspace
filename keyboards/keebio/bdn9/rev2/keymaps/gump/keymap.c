@@ -49,6 +49,18 @@ tap_dance_action_t tap_dance_actions[] = {
     [TD_LAYER_CYCLE] = ACTION_TAP_DANCE_FN(td_layer_cycle_finished),
 };
 
+// TEMP one-time-flash escape hatch: wipe stale VIA/EEPROM overlay left over
+// from earlier flashes that had RGBLIGHT enabled.  Also forces RGB Matrix
+// into a known-good state so we can see it working immediately.  REMOVE this
+// function on the next flash once RGB + EE_CLR are confirmed working — if
+// left in permanently, VIA can never persist any user edits.
+void keyboard_post_init_user(void) {
+    eeconfig_init_quantum();
+    rgb_matrix_enable();
+    rgb_matrix_mode(RGB_MATRIX_BREATHING);
+    rgb_matrix_sethsv(128, 255, 60);
+}
+
 #define LAYER_TD TD(TD_LAYER_CYCLE)
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
