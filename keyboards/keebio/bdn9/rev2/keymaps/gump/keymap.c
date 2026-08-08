@@ -190,7 +190,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         case PM_STOP:
             if (record->event.pressed && pm_recording_slot >= 0) {
                 pm_data.magic = PM_MAGIC;
-                eeconfig_update_user_datablock(&pm_data);
+                eeconfig_update_user_datablock(&pm_data, 0, sizeof(pm_data));
                 pm_recording_slot = -1;
             }
             return false;
@@ -231,10 +231,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 void eeconfig_init_user(void) {
     memset(&pm_data, 0, sizeof(pm_data));
     pm_data.magic = PM_MAGIC;
-    eeconfig_update_user_datablock(&pm_data);
+    eeconfig_update_user_datablock(&pm_data, 0, sizeof(pm_data));
 }
 
 void keyboard_post_init_user(void) {
-    eeconfig_read_user_datablock(&pm_data);
+    eeconfig_read_user_datablock(&pm_data, 0, sizeof(pm_data));
     if (pm_data.magic != PM_MAGIC) eeconfig_init_user();
 }
