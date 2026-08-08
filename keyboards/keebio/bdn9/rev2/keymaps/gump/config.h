@@ -8,3 +8,10 @@
 #define WS2812_SPI_MOSI_PAL_MODE 0
 #define WS2812_SPI_SCK_PIN      B13
 #define WS2812_SPI_SCK_PAL_MODE 0
+
+// The underglow LEDs are painfully bright at 255.  Cap and default low.
+#define RGB_MATRIX_MAXIMUM_BRIGHTNESS 150
+#define RGB_MATRIX_DEFAULT_VAL       60
+#define RGB_MATRIX_DEFAULT_MODE      RGB_MATRIX_BREATHING
+#define RGB_MATRIX_DEFAULT_HUE       128
+#define RGB_MATRIX_DEFAULT_SAT       255

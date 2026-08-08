@@ -83,3 +83,29 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
     }
     return false;
 }
+
+// LED index of the top-middle key — matches keyboard.json ordering.
+#define LAYER_INDICATOR_LED 1
+
+// Pulse the top-middle key when a non-BASE layer is active.
+// MEDIA = green, RGB = blue, SYSTEM = red.  Triangle wave over 2s.
+bool rgb_matrix_indicators_user(void) {
+    uint8_t layer = get_highest_layer(layer_state);
+    if (layer == _BASE) return false;
+
+    uint8_t r = 0, g = 0, b = 0;
+    switch (layer) {
+        case _MEDIA:  g = 255; break;
+        case _RGB:    b = 255; break;
+        case _SYSTEM: r = 255; break;
+        default: return false;
+    }
+
+    uint16_t t = timer_read() % 2000;
+    uint8_t phase = (t < 1000) ? (t * 255 / 1000) : ((2000 - t) * 255 / 1000);
+    rgb_matrix_set_color(LAYER_INDICATOR_LED,
+                         (r * phase) / 255,
+                         (g * phase) / 255,
+                         (b * phase) / 255);
+    return false;
+}
