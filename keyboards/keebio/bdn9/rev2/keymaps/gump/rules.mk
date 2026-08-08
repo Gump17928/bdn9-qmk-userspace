@@ -7,3 +7,9 @@ TAP_DANCE_ENABLE = yes
 
 # Mouse keys enable MS_WHLU / MS_WHLD used for encoder scroll on MEDIA layer.
 MOUSEKEY_ENABLE = yes
+
+# VIA runtime remapping + macro editor at usevia.app.  Persists to EEPROM.
+VIA_ENABLE = yes
+
+# Record/play macros directly on the keyboard (no PC required).
+DYNAMIC_MACRO_ENABLE = yes

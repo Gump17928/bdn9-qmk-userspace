@@ -15,3 +15,7 @@
 #define RGB_MATRIX_DEFAULT_MODE      RGB_MATRIX_BREATHING
 #define RGB_MATRIX_DEFAULT_HUE       128
 #define RGB_MATRIX_DEFAULT_SAT       255
+
+// VIA reserves EEPROM per remappable layer.  We ship 5 (BASE, MEDIA,
+// RGB, SYSTEM, MACRO) so bump the default of 4.
+#define DYNAMIC_KEYMAP_LAYER_COUNT 5
