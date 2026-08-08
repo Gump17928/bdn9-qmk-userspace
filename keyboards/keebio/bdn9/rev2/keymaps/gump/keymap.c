@@ -98,11 +98,12 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
     // VIA-programmed macros; use usevia.app to author them.
     [_VIA_MACROS] = LAYOUT(
-        MC_0, MC_1, MC_2,
-        MC_3, MC_4, MC_5,
-        MC_6, MC_7, MC_8
+        _______,    _______,       _______,
+        MC_1,       MC_2,          MC_3,
+        MC_4,       MC_5,          MC_6
     ),
 };
+
 
 // -------- Encoders (layer-aware) --------
 bool encoder_update_user(uint8_t index, bool clockwise) {
