@@ -11,5 +11,5 @@ MOUSEKEY_ENABLE = yes
 # VIA runtime remapping + macro editor at usevia.app.  Persists to EEPROM.
 VIA_ENABLE = yes
 
-# Record/play macros directly on the keyboard (no PC required).
-DYNAMIC_MACRO_ENABLE = yes
+# Persistent on-pad macro recorder is implemented in keymap.c —
+# QMK Dynamic Macros are ephemeral, so we roll our own.

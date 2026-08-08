@@ -16,6 +16,10 @@
 #define RGB_MATRIX_DEFAULT_HUE       128
 #define RGB_MATRIX_DEFAULT_SAT       255
 
-// VIA reserves EEPROM per remappable layer.  We ship 5 (BASE, MEDIA,
-// RGB, SYSTEM, MACRO) so bump the default of 4.
-#define DYNAMIC_KEYMAP_LAYER_COUNT 5
+// VIA reserves EEPROM per remappable layer.  We ship 6 (BASE, MEDIA,
+// RGB, SYSTEM, MACRO, VIA_MACROS) so bump from the default of 4.
+#define DYNAMIC_KEYMAP_LAYER_COUNT 6
+
+// Reserve EEPROM for our persistent on-pad macro storage
+// (pm_persist_t = 4 magic + 2 * (64 keys + 1 count) = 134 bytes; round up).
+#define EECONFIG_USER_DATA_SIZE 140

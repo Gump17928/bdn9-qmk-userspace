@@ -1,12 +1,14 @@
 // BDN9 Rev2 keymap (gump).  WS2812 uses SPI2 driver — see rules.mk.
 #include QMK_KEYBOARD_H
+#include <string.h>
 
 enum layers {
     _BASE = 0,
     _MEDIA,
     _RGB,
     _SYSTEM,
-    _MACRO,
+    _MACRO,       // on-pad recorded macros, persistent via EEPROM
+    _VIA_MACROS,  // VIA-programmed macros, edited via usevia.app
 };
 
 enum encoder_names {
@@ -15,22 +17,48 @@ enum encoder_names {
     _MIDDLE,
 };
 
+enum custom_keycodes {
+    PM_REC1 = SAFE_RANGE,  // start recording into persistent slot 1
+    PM_REC2,
+    PM_STOP,               // stop + write current slot to EEPROM
+    PM_PLAY1,
+    PM_PLAY2,
+};
+
 enum tap_dance_ids {
     TD_LAYER_CYCLE,
 };
 
-// Tap = advance to next non-base layer; when on any non-base layer, a
-// single tap returns to BASE.  1=MEDIA, 2=RGB, 3=SYSTEM, 4=MACRO.
+// -------- Persistent on-pad macro storage --------
+#define PM_SLOTS      2
+#define PM_SLOT_LEN   32          // max keystrokes captured per slot
+#define PM_MAGIC      0xC0DE1337u // sentinel to detect fresh/uninitialized EEPROM
+
+typedef struct {
+    uint16_t keys[PM_SLOT_LEN];
+    uint8_t  count;
+} pm_slot_t;
+
+typedef struct {
+    uint32_t  magic;
+    pm_slot_t slots[PM_SLOTS];
+} pm_persist_t;
+
+static pm_persist_t pm_data;
+static int8_t       pm_recording_slot = -1;  // -1 = idle
+
+// -------- Tap dance: cycle layers on the top-middle key --------
 static void td_layer_cycle_finished(tap_dance_state_t *state, void *user_data) {
     if (get_highest_layer(layer_state) != _BASE) {
         layer_clear();
         return;
     }
     switch (state->count) {
-        case 1:  layer_move(_MEDIA);  break;
-        case 2:  layer_move(_RGB);    break;
-        case 3:  layer_move(_SYSTEM); break;
-        default: layer_move(_MACRO);  break;
+        case 1:  layer_move(_MEDIA);       break;
+        case 2:  layer_move(_RGB);         break;
+        case 3:  layer_move(_SYSTEM);      break;
+        case 4:  layer_move(_MACRO);       break;
+        default: layer_move(_VIA_MACROS);  break;
     }
 }
 
@@ -61,17 +89,22 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         _______, RM_SPDU, _______,
         _______, RM_SPDD, RM_PREV
     ),
-    // MACRO layer — record/play macros directly on the pad.
-    // Top-left = stop recording.  Middle/bottom-left record into slots
-    // 1 and 2; middle/bottom-right play them back.  Top-right cancels a
-    // recording in progress.
+    // Persistent on-pad recorder.  Record→BASE type your macro→come back
+    // and STOP (which writes to EEPROM).  Play from anywhere via PM_PLYn.
     [_MACRO] = LAYOUT(
-        DM_RSTP, _______, DM_RTOG,
-        DM_REC1, _______, DM_PLY1,
-        DM_REC2, _______, DM_PLY2
+        PM_STOP, _______, _______,
+        PM_REC1, _______, PM_PLAY1,
+        PM_REC2, _______, PM_PLAY2
+    ),
+    // VIA-programmed macros; use usevia.app to author them.
+    [_VIA_MACROS] = LAYOUT(
+        MC_0, MC_1, MC_2,
+        MC_3, MC_4, MC_5,
+        MC_6, MC_7, MC_8
     ),
 };
 
+// -------- Encoders (layer-aware) --------
 bool encoder_update_user(uint8_t index, bool clockwise) {
     uint8_t layer = get_highest_layer(layer_state);
     switch (layer) {
@@ -95,21 +128,29 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
     return false;
 }
 
-// LED index of the top-middle key — matches keyboard.json ordering.
+// -------- Layer indicator + record-blink on top-middle LED --------
 #define LAYER_INDICATOR_LED 1
 
-// Pulse the top-middle key when a non-BASE layer is active.
-// MEDIA=green, RGB=blue, SYSTEM=red, MACRO=magenta.  Triangle wave over 2s.
 bool rgb_matrix_indicators_user(void) {
+    // While recording, override with a fast red blink — takes priority
+    // over the normal layer color.
+    if (pm_recording_slot >= 0) {
+        uint16_t t = timer_read() % 400;
+        uint8_t on = (t < 200) ? 255 : 0;
+        rgb_matrix_set_color(LAYER_INDICATOR_LED, on, 0, 0);
+        return false;
+    }
+
     uint8_t layer = get_highest_layer(layer_state);
     if (layer == _BASE) return false;
 
     uint8_t r = 0, g = 0, b = 0;
     switch (layer) {
-        case _MEDIA:  g = 255;             break;
-        case _RGB:    b = 255;             break;
-        case _SYSTEM: r = 255;             break;
-        case _MACRO:  r = 255; b = 255;    break;
+        case _MEDIA:      g = 255;             break;
+        case _RGB:        b = 255;             break;
+        case _SYSTEM:     r = 255;             break;
+        case _MACRO:      r = 255; b = 255;    break;  // magenta
+        case _VIA_MACROS: r = 255; g = 255;    break;  // yellow
         default: return false;
     }
 
@@ -120,4 +161,80 @@ bool rgb_matrix_indicators_user(void) {
                          (g * phase) / 255,
                          (b * phase) / 255);
     return false;
+}
+
+// Only capture "real" HID keystrokes during recording; skip our own
+// control keycodes, layer switches, macros, etc.
+static bool pm_is_recordable(uint16_t keycode) {
+    if (keycode >= KC_A && keycode <= KC_EXSEL)             return true;
+    if (keycode >= KC_LEFT_CTRL && keycode <= KC_RIGHT_GUI) return true;
+    return false;
+}
+
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    switch (keycode) {
+        case PM_REC1:
+            if (record->event.pressed) {
+                pm_recording_slot = 0;
+                pm_data.slots[0].count = 0;
+                layer_move(_BASE);   // drop back so user records BASE keys
+            }
+            return false;
+        case PM_REC2:
+            if (record->event.pressed) {
+                pm_recording_slot = 1;
+                pm_data.slots[1].count = 0;
+                layer_move(_BASE);
+            }
+            return false;
+        case PM_STOP:
+            if (record->event.pressed && pm_recording_slot >= 0) {
+                pm_data.magic = PM_MAGIC;
+                eeconfig_update_user_datablock(&pm_data);
+                pm_recording_slot = -1;
+            }
+            return false;
+        case PM_PLAY1:
+            if (record->event.pressed) {
+                pm_slot_t *s = &pm_data.slots[0];
+                for (uint8_t i = 0; i < s->count; i++) tap_code16(s->keys[i]);
+            }
+            return false;
+        case PM_PLAY2:
+            if (record->event.pressed) {
+                pm_slot_t *s = &pm_data.slots[1];
+                for (uint8_t i = 0; i < s->count; i++) tap_code16(s->keys[i]);
+            }
+            return false;
+        default:
+            if (pm_recording_slot >= 0 && record->event.pressed) {
+                // Skip modifier keys — we bake their state into the next
+                // captured basic keycode so replay reproduces Shift+A etc.
+                if (IS_MODIFIER_KEYCODE(keycode)) return true;
+                if (!pm_is_recordable(keycode))  return true;
+
+                uint16_t code = keycode;
+                uint8_t  mods = get_mods();
+                if (mods & MOD_MASK_SHIFT) code = LSFT(code);
+                if (mods & MOD_MASK_CTRL)  code = LCTL(code);
+                if (mods & MOD_MASK_ALT)   code = LALT(code);
+                if (mods & MOD_MASK_GUI)   code = LGUI(code);
+
+                pm_slot_t *s = &pm_data.slots[pm_recording_slot];
+                if (s->count < PM_SLOT_LEN) s->keys[s->count++] = code;
+            }
+            return true;
+    }
+}
+
+// Called when EEPROM needs a fresh init (VIA reset, EE_CLR, first flash).
+void eeconfig_init_user(void) {
+    memset(&pm_data, 0, sizeof(pm_data));
+    pm_data.magic = PM_MAGIC;
+    eeconfig_update_user_datablock(&pm_data);
+}
+
+void keyboard_post_init_user(void) {
+    eeconfig_read_user_datablock(&pm_data);
+    if (pm_data.magic != PM_MAGIC) eeconfig_init_user();
 }
