@@ -5,12 +5,12 @@
 //     [KEY_ML]     [KEY_MM]     [KEY_MR]
 //     [KEY_BL]     [KEY_BM]     [KEY_BR]
 //
-// Encoder press is tap-hold (LT):
-//   Tap L-ENC  = Mute         Hold L-ENC  = Layer 1 (MEDIA)
-//   Tap R-ENC  = Play/Pause   Hold R-ENC  = Layer 2 (RGB)
-//   Hold BOTH  = Layer 3 (SYSTEM) via update_tri_layer_state()
+// Layer switching: tap the top-middle key (KEY_TL) a number of times.
+//   From BASE:   1 tap  -> MEDIA         2 taps -> RGB        3 taps -> SYSTEM
+//   From any:    any # of taps -> back to BASE (sticky layers).
 //
-// Encoder rotation is layer-aware — see encoder_update_user() below.
+// Encoder presses stay plain Mute / Play/Pause.
+// Encoder rotation is layer-aware — see encoder_update_user().
 #include QMK_KEYBOARD_H
 
 enum layers {
@@ -26,39 +26,61 @@ enum encoder_names {
     _MIDDLE,  // unused on 2-encoder boards
 };
 
+enum tap_dance_ids {
+    TD_LAYER_CYCLE = 0,
+};
+
+// Fires once per tap-dance sequence, after TAPPING_TERM elapses from last tap.
+static void td_layer_cycle_finished(tap_dance_state_t *state, void *user_data) {
+    if (get_highest_layer(layer_state) != _BASE) {
+        // On any non-base layer, any tap count returns to base.
+        layer_clear();
+        return;
+    }
+    switch (state->count) {
+        case 1: layer_on(_MEDIA);  break;
+        case 2: layer_on(_RGB);    break;
+        case 3: layer_on(_SYSTEM); break;
+        default: break;  // 4+ taps: no-op, protects against accidental mashing
+    }
+}
+
+tap_dance_action_t tap_dance_actions[] = {
+    [TD_LAYER_CYCLE] = ACTION_TAP_DANCE_FN(td_layer_cycle_finished),
+};
+
+#define LAYER_TD TD(TD_LAYER_CYCLE)
+
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
-    /* BASE */
+    /* BASE — top-middle cycles layers by tap count */
     [_BASE] = LAYOUT(
-        LT(_MEDIA, KC_MUTE), KC_HOME, LT(_RGB, KC_MPLY),
-        KC_APP,              KC_UP,   RM_TOGG,
-        KC_LEFT,             KC_DOWN, KC_RGHT
+        KC_MUTE, LAYER_TD, KC_MPLY,
+        KC_APP,  KC_UP,    RM_TOGG,
+        KC_LEFT, KC_DOWN,  KC_RGHT
     ),
 
-    /* MEDIA — hold left encoder */
+    /* MEDIA — 1 tap from base.  Top-middle transparent so tap dance still
+       runs to return to base. */
     [_MEDIA] = LAYOUT(
-        _______, KC_END,  _______,
-        _______, KC_PGUP, _______,
+        _______, _______, _______,
+        KC_HOME, KC_PGUP, KC_END,
         KC_MPRV, KC_PGDN, KC_MNXT
     ),
 
-    /* RGB — hold right encoder */
+    /* RGB — 2 taps from base. */
     [_RGB] = LAYOUT(
-        _______, RM_HUEU, _______,
+        _______, _______, _______,
         RM_VALD, RM_SATU, RM_VALU,
         RM_HUED, RM_SATD, RM_NEXT
     ),
 
-    /* SYSTEM — hold BOTH encoders (auto via tri-layer) */
+    /* SYSTEM — 3 taps from base. */
     [_SYSTEM] = LAYOUT(
         QK_BOOT, _______, EE_CLR,
         _______, RM_SPDU, _______,
         _______, RM_SPDD, RM_PREV
     ),
 };
-
-layer_state_t layer_state_set_user(layer_state_t state) {
-    return update_tri_layer_state(state, _MEDIA, _RGB, _SYSTEM);
-}
 
 bool encoder_update_user(uint8_t index, bool clockwise) {
     uint8_t layer = get_highest_layer(layer_state);
@@ -82,4 +104,5 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
     }
     return false;
 }
+
 

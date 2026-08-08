@@ -4,4 +4,7 @@
 # VIA runtime remapping + macro editor (usevia.app). Persists to EEPROM emul.
 VIA_ENABLE = yes
 
+# Tap dance drives the layer-cycle key on the top-middle position.
+TAP_DANCE_ENABLE = yes
+
 # Encoders are enabled by default in keyboard.json; nothing to do here.
