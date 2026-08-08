@@ -1,5 +1,10 @@
-# RGB Matrix is enabled by keyboard.json; do NOT also enable RGBLIGHT
-# (they fight over the same WS2812 chain and cause weird behavior / brightness).
+# RGB Matrix is declared as a feature in keyboard.json, but the data-driven
+# enable doesn't always propagate the RGB_MATRIX_ENABLE define reliably.
+# Enable it explicitly so the driver, effects, and RM_* keycodes all compile in.
+RGB_MATRIX_ENABLE = yes
+
+# Do NOT also enable RGBLIGHT — it fights with RGB Matrix over the same
+# WS2812 chain and causes weird behavior / stuck full-brightness white.
 
 # VIA runtime remapping + macro editor (usevia.app). Persists to EEPROM emul.
 VIA_ENABLE = yes
