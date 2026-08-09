@@ -32,7 +32,6 @@ enum tap_dance_ids {
 // -------- Persistent on-pad macro storage --------
 #define PM_SLOTS      2
 #define PM_SLOT_LEN   32          // max keystrokes captured per slot
-#define PM_MAGIC      0xC0DE1337u // sentinel to detect fresh/uninitialized EEPROM
 
 typedef struct {
     uint16_t keys[PM_SLOT_LEN];
@@ -40,7 +39,6 @@ typedef struct {
 } pm_slot_t;
 
 typedef struct {
-    uint32_t  magic;
     pm_slot_t slots[PM_SLOTS];
 } pm_persist_t;
 
@@ -190,7 +188,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             return false;
         case PM_STOP:
             if (record->event.pressed && pm_recording_slot >= 0) {
-                pm_data.magic = PM_MAGIC;
                 eeconfig_update_user_datablock(&pm_data, 0, sizeof(pm_data));
                 pm_recording_slot = -1;
             }
@@ -228,14 +225,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     }
 }
 
-// Called when EEPROM needs a fresh init (VIA reset, EE_CLR, first flash).
-void eeconfig_init_user(void) {
-    memset(&pm_data, 0, sizeof(pm_data));
-    pm_data.magic = PM_MAGIC;
-    eeconfig_update_user_datablock(&pm_data, 0, sizeof(pm_data));
-}
-
 void keyboard_post_init_user(void) {
+    if (!eeconfig_is_user_datablock_valid()) {
+        eeconfig_init_user_datablock();
+    }
     eeconfig_read_user_datablock(&pm_data, 0, sizeof(pm_data));
-    if (pm_data.magic != PM_MAGIC) eeconfig_init_user();
 }

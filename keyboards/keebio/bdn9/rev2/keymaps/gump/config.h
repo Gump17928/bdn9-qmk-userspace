@@ -21,5 +21,5 @@
 #define DYNAMIC_KEYMAP_LAYER_COUNT 6
 
 // Reserve EEPROM for our persistent on-pad macro storage
-// (pm_persist_t = 4 magic + 2 * (64 keys + 1 count) = 134 bytes; round up).
+// (pm_persist_t = 2 * (64 keys + 1 count + pad) = 132 bytes; round up).
 #define EECONFIG_USER_DATA_SIZE 140
