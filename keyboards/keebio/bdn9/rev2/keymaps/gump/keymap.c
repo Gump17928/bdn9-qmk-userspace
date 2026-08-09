@@ -68,37 +68,37 @@ tap_dance_action_t tap_dance_actions[] = {
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_BASE] = LAYOUT(
-        KC_MUTE, LAYER_TD, KC_MPLY,
-        KC_APP,  KC_UP,    RM_TOGG,
-        KC_LEFT, KC_DOWN,  KC_RGHT
+        KC_MUTE,        LAYER_TD,       KC_MPLY,
+        KC_APP,         KC_PSCR,        RM_TOGG,
+        MC_1,           MC_2,           MC_3
     ),
     [_MEDIA] = LAYOUT(
-        _______, _______, _______,
-        KC_HOME, KC_PGUP, KC_END,
-        KC_MPRV, KC_PGDN, KC_MNXT
+        _______,    _______,    _______,
+        KC_HOME,    KC_PGUP,    KC_END,
+        KC_MPRV,    KC_PGDN,    KC_MNXT
     ),
     [_RGB] = LAYOUT(
-        _______, _______, _______,
-        RM_VALD, RM_SATU, RM_VALU,
-        RM_HUED, RM_SATD, RM_NEXT
+        _______,    _______,    _______,
+        RM_VALU,    RM_SATU,    RM_HUEU,
+        RM_VALD,    RM_SATD,    RM_HUED
     ),
     [_SYSTEM] = LAYOUT(
-        QK_BOOT, _______, EE_CLR,
-        _______, RM_SPDU, _______,
-        _______, RM_SPDD, RM_PREV
+        QK_BOOT,    _______,    EE_CLR,
+        _______,    RM_SPDU,    RM_NEXT,
+        _______,    RM_SPDD,    RM_PREV
     ),
     // Persistent on-pad recorder.  Record→BASE type your macro→come back
     // and STOP (which writes to EEPROM).  Play from anywhere via PM_PLYn.
     [_MACRO] = LAYOUT(
-        PM_STOP, _______, _______,
-        PM_REC1, _______, PM_PLAY1,
-        PM_REC2, _______, PM_PLAY2
+        PM_STOP,    _______,    _______,
+        PM_REC1,    _______,    PM_PLAY1,
+        PM_REC2,    _______,    PM_PLAY2
     ),
     // VIA-programmed macros; use usevia.app to author them.
     [_VIA_MACROS] = LAYOUT(
-        _______,    _______,       _______,
-        MC_1,       MC_2,          MC_3,
-        MC_4,       MC_5,          MC_6
+        _______,    _______,    _______,
+        MC_4,       MC_5,       MC_6,
+        MC_7,       MC_8,       MC_9
     ),
 };
 
@@ -109,11 +109,11 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
     switch (layer) {
         case _BASE:
             if (index == _LEFT)  tap_code(clockwise ? KC_VOLU : KC_VOLD);
-            if (index == _RIGHT) tap_code(clockwise ? KC_PGDN : KC_PGUP);
+            if (index == _RIGHT) tap_code(clockwise ? KC_MNXT : KC_MPRV );
             break;
         case _MEDIA:
-            if (index == _LEFT)  tap_code(clockwise ? KC_MNXT : KC_MPRV);
-            if (index == _RIGHT) tap_code(clockwise ? MS_WHLD : MS_WHLU);
+            if (index == _LEFT)  tap_code(clockwise ? MS_WHLD : MS_WHLU);
+            if (index == _RIGHT) tap_code(clockwise ? KC_PGDN : KC_PGUP);
             break;
         case _RGB:
             if (index == _LEFT)  tap_code16(clockwise ? RM_VALU : RM_VALD);
