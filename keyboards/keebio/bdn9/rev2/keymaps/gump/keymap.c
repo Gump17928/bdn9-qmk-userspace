@@ -116,17 +116,16 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
             if (index == _RIGHT) tap_code(clockwise ? KC_PGDN : KC_PGUP);
             break;
         case _RGB:
-            if (index == _LEFT)  tap_code16(clockwise ? RM_VALU : RM_VALD);
-            if (index == _RIGHT) tap_code16(clockwise ? RM_HUEU : RM_HUED);
+            if (index == _LEFT)  clockwise ? rgb_matrix_increase_val()   : rgb_matrix_decrease_val();
+            if (index == _RIGHT) clockwise ? rgb_matrix_increase_hue()   : rgb_matrix_decrease_hue();
             break;
         case _SYSTEM:
-            if (index == _LEFT)  tap_code16(clockwise ? RM_SPDU : RM_SPDD);
-            if (index == _RIGHT) tap_code16(clockwise ? RM_NEXT : RM_PREV);
+            if (index == _LEFT)  clockwise ? rgb_matrix_increase_speed() : rgb_matrix_decrease_speed();
+            if (index == _RIGHT) clockwise ? rgb_matrix_step()           : rgb_matrix_step_reverse();
             break;
     }
     return false;
 }
-
 // -------- Layer indicator + record-blink on top-middle LED --------
 #define LAYER_INDICATOR_LED 1
 
